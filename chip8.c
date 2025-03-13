@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include "SDL.h"
+#include "SDL2/SDL.h"
 
 // SDL Container object
 typedef struct {
@@ -345,6 +345,53 @@ void update_screen(const sdl_t sdl, const config_t config, chip8_t *chip8) {
     SDL_RenderPresent(sdl.renderer);
 }
 
+
+// Save State function
+
+bool save_state(const chip8_t *chip8, const char *filename) {
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        SDL_Log("Failed to open file %s for saving state\n", filename);
+        return false;
+    }
+
+    // Write the entire chip8_t structure to the file
+    if (fwrite(chip8, sizeof(chip8_t), 1, file) != 1) {
+        SDL_Log("Failed to write state to file %s\n", filename);
+        fclose(file);
+        return false;
+    }
+
+    fclose(file);
+    return true;
+}
+
+//gets the state of the chip8 machine and saves it to a file
+
+
+// Load State function
+
+bool load_state(chip8_t *chip8, const char *filename) {
+    FILE *file = fopen(filename, "rb");
+    if (!file) {
+        SDL_Log("Failed to open file %s for loading state\n", filename);
+        return false;
+    }
+
+    // Read the entire chip8_t structure from the file
+    if (fread(chip8, sizeof(chip8_t), 1, file) != 1) {
+        SDL_Log("Failed to read state from file %s\n", filename);
+        fclose(file);
+        return false;
+    }
+
+    fclose(file);
+    return true;
+}
+
+//gets the state of the chip8 machine from a file and loads it into the current machine
+
+
 // Handle user input
 // CHIP8 Keypad  QWERTY 
 // 123C          1234
@@ -405,6 +452,24 @@ void handle_input(chip8_t *chip8, config_t *config) {
                         // 'p': Increase Volume
                         if (config->volume < INT16_MAX)
                             config->volume += 500;
+                        break;
+
+                    // Save state on F5
+                    case SDLK_F5:
+                        if (save_state(chip8, "save_state.bin")) {
+                            puts("State saved successfully.");
+                        } else {
+                            puts("Failed to save state.");
+                        }
+                        break;
+
+                    // Load state on F9
+                    case SDLK_F9:
+                        if (load_state(chip8, "save_state.bin")) {
+                            puts("State loaded successfully.");
+                        } else {
+                            puts("Failed to load state.");
+                        }
                         break;
 
                     // Map qwerty keys to CHIP8 keypad
